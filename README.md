@@ -1,5 +1,3 @@
-# Welcome to your Lovable project
-
 ## Project info
 
 **URL**: [배포 링크](https://repo-api-wizard.lovable.app/)
