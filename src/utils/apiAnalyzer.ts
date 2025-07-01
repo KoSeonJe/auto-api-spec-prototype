@@ -47,7 +47,7 @@ const fetchRepositoryContents = async (repositoryUrl: string): Promise<any[]> =>
   try {
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents`);
     if (!response.ok) {
-      throw new Error(`GitHub API Error: ${response.status}`);
+      throw new Error(`GitHub API Error: ${response.status} - ${response.statusText}`);
     }
     
     const contents = await response.json();
@@ -95,10 +95,12 @@ const findJavaFiles = async (repositoryUrl: string, path: string = ''): Promise<
   }
 };
 
-// AI API 호출 (Gemini)
+// AI API 호출 (Gemini) - 올바른 엔드포인트 사용
 const callGeminiAPI = async (apiKey: string, prompt: string): Promise<string> => {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    console.log('Calling Gemini API with key:', apiKey.substring(0, 10) + '...');
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,15 +110,31 @@ const callGeminiAPI = async (apiKey: string, prompt: string): Promise<string> =>
           parts: [{
             text: prompt
           }]
-        }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192,
+        }
       })
     });
 
+    console.log('Gemini API response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`Gemini API Error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Gemini API error response:', errorText);
+      throw new Error(`Gemini API Error: ${response.status} - ${response.statusText}\nDetails: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Gemini API response data:', data);
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+    
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error('Gemini API call failed:', error);
@@ -151,7 +169,8 @@ const callOpenAIAPI = async (apiKey: string, prompt: string): Promise<string> =>
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API Error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`OpenAI API Error: ${response.status} - ${response.statusText}\nDetails: ${errorText}`);
     }
 
     const data = await response.json();
@@ -184,6 +203,8 @@ export const analyzeRepository = async (
     if (javaFiles.length === 0) {
       throw new Error('Java Controller 파일을 찾을 수 없습니다. Spring Boot 프로젝트인지 확인해주세요.');
     }
+    
+    console.log(`Found ${javaFiles.length} Java Controller files`);
     
     // 3단계: AI 분석을 위한 프롬프트 생성
     onProgress?.('extract', 'AI 모델이 코드를 분석할 수 있도록 데이터를 준비 중...');
@@ -236,6 +257,7 @@ ${file}
 - PathVariable, RequestParam, RequestBody 등을 파라미터로 추출해주세요
 - 응답 타입과 상태코드를 추론해주세요
 - 가능한 한 상세하고 정확한 분석을 해주세요
+- 반드시 유효한 JSON 형식으로 반환해주세요
 `;
 
     // 4단계: AI API 호출
@@ -248,16 +270,25 @@ ${file}
       aiResponse = await callOpenAIAPI(apiKey, codeAnalysisPrompt);
     }
     
+    console.log('AI Response received:', aiResponse.substring(0, 200) + '...');
+    
     // 5단계: AI 응답 파싱
     onProgress?.('generate', 'AI 분석 결과를 처리하고 최종 명세서를 생성 중...');
     
     // JSON 추출 (AI 응답에서 JSON 부분만 추출)
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error('No JSON found in AI response:', aiResponse);
       throw new Error('AI 응답에서 유효한 JSON을 찾을 수 없습니다.');
     }
     
-    const analysisResult = JSON.parse(jsonMatch[0]);
+    let analysisResult: AnalysisResult;
+    try {
+      analysisResult = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('JSON parsing failed:', jsonMatch[0]);
+      throw new Error('AI 응답의 JSON 형식이 올바르지 않습니다.');
+    }
     
     console.log('Analysis completed successfully:', analysisResult);
     return analysisResult;
