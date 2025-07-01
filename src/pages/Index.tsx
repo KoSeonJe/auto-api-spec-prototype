@@ -3,19 +3,19 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Github, Sparkles, FileText, ArrowRight, CheckCircle } from 'lucide-react';
-import RepositoryInput from '@/components/RepositoryInput';
+import { FileArchive, Sparkles, FileText, ArrowRight, CheckCircle } from 'lucide-react';
+import JarFileUpload from '@/components/JarFileUpload';
 import AIModelSelector from '@/components/AIModelSelector';
 import APIKeyInput from '@/components/APIKeyInput';
 import AnalysisProgress from '@/components/AnalysisProgress';
 import SpecificationViewer from '@/components/SpecificationViewer';
-import { analyzeRepository, convertToMarkdown } from '@/utils/apiAnalyzer';
+import { analyzeJarFile, convertToMarkdown } from '@/utils/apiAnalyzer';
 
 type Step = 'input' | 'analyzing' | 'result';
 type AIModel = 'gemini' | 'openai';
 
 interface ProjectData {
-  repositoryUrl: string;
+  jarFile: File | null;
   aiModel: AIModel;
   apiKey: string;
 }
@@ -23,7 +23,7 @@ interface ProjectData {
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<Step>('input');
   const [projectData, setProjectData] = useState<ProjectData>({
-    repositoryUrl: '',
+    jarFile: null,
     aiModel: 'gemini',
     apiKey: ''
   });
@@ -32,16 +32,18 @@ const Index = () => {
   const [analysisError, setAnalysisError] = useState<string>('');
 
   const handleInputComplete = async (data: ProjectData) => {
+    if (!data.jarFile) return;
+    
     setProjectData(data);
     setCurrentStep('analyzing');
     setIsAnalyzing(true);
     setAnalysisError('');
     
     try {
-      console.log('Starting analysis with data:', data);
+      console.log('Starting JAR analysis with data:', { fileName: data.jarFile.name, aiModel: data.aiModel });
       
-      const analysisResult = await analyzeRepository(
-        data.repositoryUrl,
+      const analysisResult = await analyzeJarFile(
+        data.jarFile,
         data.aiModel,
         data.apiKey,
         (step, description) => {
@@ -55,7 +57,7 @@ const Index = () => {
       
     } catch (error) {
       console.error('Analysis failed:', error);
-      setAnalysisError(error instanceof Error ? error.message : '분석 중 오류가 발생했습니다.');
+      setAnalysisError(error instanceof Error ? error.message : 'JAR 파일 분석 중 오류가 발생했습니다.');
       setCurrentStep('input');
     } finally {
       setIsAnalyzing(false);
@@ -65,7 +67,7 @@ const Index = () => {
   const resetProcess = () => {
     setCurrentStep('input');
     setProjectData({
-      repositoryUrl: '',
+      jarFile: null,
       aiModel: 'gemini',
       apiKey: ''
     });
@@ -88,7 +90,7 @@ const Index = () => {
             </Badge>
           </div>
           <p className="text-slate-400 mt-2">
-            GitHub Repository를 분석하여 자동으로 API 명세서를 생성합니다
+            JAR 파일을 분석하여 자동으로 API 명세서를 생성합니다
           </p>
         </div>
       </div>
@@ -100,9 +102,9 @@ const Index = () => {
             {currentStep === 'analyzing' || currentStep === 'result' ? (
               <CheckCircle className="h-5 w-5" />
             ) : (
-              <Github className="h-5 w-5" />
+              <FileArchive className="h-5 w-5" />
             )}
-            <span className="font-medium">Repository 설정</span>
+            <span className="font-medium">JAR 파일 업로드</span>
           </div>
           <ArrowRight className="h-4 w-4 text-slate-500" />
           <div className={`flex items-center gap-2 ${currentStep === 'analyzing' ? 'text-blue-400' : currentStep === 'result' ? 'text-green-400' : 'text-slate-500'}`}>
@@ -126,14 +128,14 @@ const Index = () => {
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <Github className="h-5 w-5 text-blue-400" />
+                  <FileArchive className="h-5 w-5 text-blue-400" />
                   프로젝트 설정
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <RepositoryInput
-                  value={projectData.repositoryUrl}
-                  onChange={(url) => setProjectData(prev => ({ ...prev, repositoryUrl: url }))}
+                <JarFileUpload
+                  selectedFile={projectData.jarFile}
+                  onFileSelect={(file) => setProjectData(prev => ({ ...prev, jarFile: file }))}
                 />
                 <AIModelSelector
                   value={projectData.aiModel}
@@ -154,7 +156,7 @@ const Index = () => {
                 
                 <Button
                   onClick={() => handleInputComplete(projectData)}
-                  disabled={!projectData.repositoryUrl || !projectData.apiKey || isAnalyzing}
+                  disabled={!projectData.jarFile || !projectData.apiKey || isAnalyzing}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   size="lg"
                 >
@@ -166,7 +168,7 @@ const Index = () => {
           )}
 
           {currentStep === 'analyzing' && (
-            <AnalysisProgress repositoryUrl={projectData.repositoryUrl} />
+            <AnalysisProgress repositoryUrl={projectData.jarFile?.name || 'JAR 파일'} />
           )}
 
           {currentStep === 'result' && (

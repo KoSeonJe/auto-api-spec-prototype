@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 
 // 실제 GitHub Repository 분석 및 AI API 호출 구현
 export interface APIEndpoint {
@@ -95,6 +96,37 @@ const findJavaFiles = async (repositoryUrl: string, path: string = ''): Promise<
   }
 };
 
+// JAR 파일에서 Java 파일들을 추출하는 함수
+const extractJavaFilesFromJar = async (jarFile: File): Promise<string[]> => {
+  try {
+    console.log('Extracting files from JAR:', jarFile.name);
+    
+    const zip = new JSZip();
+    const contents = await zip.loadAsync(jarFile);
+    const javaFiles: string[] = [];
+    
+    // JAR 파일 내의 모든 파일을 순회
+    for (const [filePath, file] of Object.entries(contents.files)) {
+      // .java 파일이고 Controller가 포함된 파일만 추출
+      if (filePath.endsWith('.java') && 
+          (filePath.includes('Controller') || filePath.toLowerCase().includes('controller'))) {
+        
+        if (!file.dir) {
+          const content = await file.async('text');
+          javaFiles.push(content);
+          console.log(`Extracted Java file: ${filePath}`);
+        }
+      }
+    }
+    
+    console.log(`Found ${javaFiles.length} Java Controller files in JAR`);
+    return javaFiles;
+  } catch (error) {
+    console.error('Failed to extract files from JAR:', error);
+    throw new Error('JAR 파일을 읽는 중 오류가 발생했습니다.');
+  }
+};
+
 // AI API 호출 (Gemini) - 올바른 엔드포인트 사용
 const callGeminiAPI = async (apiKey: string, prompt: string): Promise<string> => {
   try {
@@ -181,33 +213,29 @@ const callOpenAIAPI = async (apiKey: string, prompt: string): Promise<string> =>
   }
 };
 
-// 실제 Repository 분석 함수
-export const analyzeRepository = async (
-  repositoryUrl: string,
+// JAR 파일 분석 함수
+export const analyzeJarFile = async (
+  jarFile: File,
   aiModel: 'gemini' | 'openai',
   apiKey: string,
   onProgress?: (step: string, description: string) => void
 ): Promise<AnalysisResult> => {
   
-  console.log('Starting repository analysis:', repositoryUrl);
+  console.log('Starting JAR file analysis:', jarFile.name);
   
   try {
-    // 1단계: Repository 구조 확인
-    onProgress?.('clone', 'GitHub Repository에서 파일 구조를 가져오는 중...');
-    const contents = await fetchRepositoryContents(repositoryUrl);
-    
-    // 2단계: Java Controller 파일들 찾기
-    onProgress?.('scan', '프로젝트 구조를 분석하고 Controller 파일들을 찾는 중...');
-    const javaFiles = await findJavaFiles(repositoryUrl);
+    // 1단계: JAR 파일에서 Java 파일들 추출
+    onProgress?.('extract', 'JAR 파일에서 Java Controller 파일들을 추출하는 중...');
+    const javaFiles = await extractJavaFilesFromJar(jarFile);
     
     if (javaFiles.length === 0) {
-      throw new Error('Java Controller 파일을 찾을 수 없습니다. Spring Boot 프로젝트인지 확인해주세요.');
+      throw new Error('JAR 파일에서 Java Controller 파일을 찾을 수 없습니다. Spring Boot 프로젝트인지 확인해주세요.');
     }
     
     console.log(`Found ${javaFiles.length} Java Controller files`);
     
-    // 3단계: AI 분석을 위한 프롬프트 생성
-    onProgress?.('extract', 'AI 모델이 코드를 분석할 수 있도록 데이터를 준비 중...');
+    // 2단계: AI 분석을 위한 프롬프트 생성
+    onProgress?.('prepare', 'AI 모델이 코드를 분석할 수 있도록 데이터를 준비 중...');
     
     const codeAnalysisPrompt = `
 다음은 Spring Boot 프로젝트의 Controller 파일들입니다. 이 코드를 분석하여 REST API 명세서를 생성해주세요.
@@ -260,7 +288,7 @@ ${file}
 - 반드시 유효한 JSON 형식으로 반환해주세요
 `;
 
-    // 4단계: AI API 호출
+    // 3단계: AI API 호출
     onProgress?.('ai-analyze', 'AI 모델이 코드 구조를 분석하고 API 명세를 생성 중...');
     
     let aiResponse: string;
@@ -272,7 +300,7 @@ ${file}
     
     console.log('AI Response received:', aiResponse.substring(0, 200) + '...');
     
-    // 5단계: AI 응답 파싱
+    // 4단계: AI 응답 파싱
     onProgress?.('generate', 'AI 분석 결과를 처리하고 최종 명세서를 생성 중...');
     
     // JSON 추출 (AI 응답에서 JSON 부분만 추출)
@@ -294,7 +322,7 @@ ${file}
     return analysisResult;
     
   } catch (error) {
-    console.error('Repository analysis failed:', error);
+    console.error('JAR file analysis failed:', error);
     throw error;
   }
 };
