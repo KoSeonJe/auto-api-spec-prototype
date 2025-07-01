@@ -2,72 +2,98 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/e98e77d5-9604-4a77-84a7-16f4c2a22740
+**URL**: [배포 링크](https://repo-api-wizard.lovable.app/)
+# 🤖 API 명세서 자동 생성 툴 - 페르소나 & 사용자 스토리
 
-## How can I edit this code?
+## 📌 페르소나 정의
 
-There are several ways of editing your application.
+### 👨‍💻 **페르소나 1: 바쁜 백엔드 개발자**
 
-**Use Lovable**
+**이름**: 김개발 (29세)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e98e77d5-9604-4a77-84a7-16f4c2a22740) and start prompting.
+**직업**: 중견 IT 회사 백엔드 개발자 (3년차)
 
-Changes made via Lovable will be committed automatically to this repo.
+**배경**: Spring Boot로 API 개발 담당, 매번 Swagger 어노테이션 작성하는 것이 번거로움
 
-**Use your preferred IDE**
+**목표**: API 개발에만 집중하고 문서화는 자동화하고 싶음
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+**니즈**:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 코드 작성 후 자동으로 API 명세서 생성
+- Swagger 어노테이션 작성 시간 단축
+- 기존 프로젝트에 쉽게 적용 가능한 도구**페인 포인트**:
+- API 개발 후 문서 작성으로 인한 추가 작업 시간
+- Swagger 어노테이션 누락으로 인한 문서 불일치
+- 반복적인 문서 작성 작업에 대한 스트레스
 
-Follow these steps:
+### 🚀 **페르소나 2: 스타트업 개발팀 리더**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**이름**: 박팀장 (34세)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+**직업**: 스타트업 개발팀 리더 (팀원 4명)
 
-# Step 3: Install the necessary dependencies.
-npm i
+**배경**: 빠른 제품 출시를 위해 개발 속도 중시, API 문서화 우선순위 낮음
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+**목표**: 최소한의 리소스로 완성도 높은 API 문서 확보
 
-**Edit a file directly in GitHub**
+**니즈**:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- 팀 전체의 개발 생산성 향상
+- 프론트엔드 팀과의 효율적인 협업
+- 외부 API 제공 시 빠른 문서화**페인 포인트**:
+- 문서화에 할당할 개발자 리소스 부족
+- 수동 문서 작성으로 인한 개발 속도 저하
+- 문서 업데이트 누락으로 인한 팀 간 커뮤니케이션 오류
 
-**Use GitHub Codespaces**
+### 💼 **페르소나 3: 프리랜서 풀스택 개발자**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**이름**: 이프리 (26세)
 
-## What technologies are used for this project?
+**직업**: 프리랜서 풀스택 개발자
 
-This project is built with:
+**배경**: 다양한 클라이언트 프로젝트 진행, 혼자서 백엔드부터 문서화까지 담당
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**목표**: 한정된 시간에 최대한 많은 작업 완료하여 수익 극대화
 
-## How can I deploy this project?
+**니즈**:
 
-Simply open [Lovable](https://lovable.dev/projects/e98e77d5-9604-4a77-84a7-16f4c2a22740) and click on Share -> Publish.
+- 빠른 프로젝트 완료를 위한 자동화 도구
+- 클라이언트에게 제공할 전문적인 API 문서
+- 여러 프로젝트에 재사용 가능한 솔루션**페인 포인트**:
+- 시간 대비 수익을 위해 문서화 시간 최소화 필요
+- 클라이언트 요구사항 변경 시 문서 재작성 부담
+- 개인 작업자로서 모든 업무를 혼자 처리해야 하는 압박
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 📖 사용자 스토리 & 인수 조건
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 🔗 **사용자 스토리 1: GitHub Repository 연결**
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**"백엔드 개발자로서, 저는 GitHub Repository URL만 입력하면 자동으로 API 명세서가 생성되기를 원합니다. 그래서 별도의 복잡한 설정 없이 바로 사용할 수 있습니다."**
+
+**인수 조건**:
+
+- **Given**: 사용자가 메인 페이지에 접속했을 때
+- **When**: GitHub Repository URL을 입력하고 "분석 시작" 버튼을 클릭했을 때
+- **Then**: 시스템은 해당 Repository가 Public인지 확인하고, 유효하다면 다음 단계로 진행한다
+
+### 🤖 **사용자 스토리 2: AI 모델 선택 및 API 키 설정**
+
+**"스타트업 팀 리더로서, 저는 우리 팀이 사용하는 AI API를 선택하고 API 키를 입력하여 비용을 직접 관리하고 싶습니다. 그래서 예상치 못한 과금을 방지할 수 있습니다."**
+
+**인수 조건**:
+
+- **Given**: GitHub Repository URL이 유효하게 확인되었을 때
+- **When**: AI 모델(Gemini/OpenAI) 중 하나를 선택하고 해당 API 키를 입력했을 때
+- **Then**: 시스템은 API 키 유효성을 검증하고, 유효하다면 코드 분석을 시작한다
+
+### 📋 **사용자 스토리 3: API 명세서 결과 확인 및 활용**
+
+**"프리랜서 개발자로서, 저는 생성된 API 명세서를 즉시 확인하고 복사할 수 있기를 원합니다. 그래서 클라이언트에게 바로 전달하거나 프로젝트 문서에 붙여넣을 수 있습니다."**
+
+**인수 조건**:
+
+- **Given**: AI가 코드 분석을 완료했을 때
+- **When**: 결과 페이지에서 생성된 Markdown 형식의 API 명세서를 확인했을 때
+- **Then**: 사용자는 명세서 내용을 읽기 쉬운 형태로 보고, "복사하기" 버튼으로 클립보드에 복사할 수 있다
