@@ -15,8 +15,6 @@ import {
 
 interface AnalysisProgressProps {
   repositoryUrl: string;
-  currentStep?: string;
-  currentDescription?: string;
 }
 
 interface ProgressStep {
@@ -28,19 +26,15 @@ interface ProgressStep {
   active: boolean;
 }
 
-const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ 
-  repositoryUrl, 
-  currentStep,
-  currentDescription 
-}) => {
+const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ repositoryUrl }) => {
   const [progress, setProgress] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const steps: ProgressStep[] = [
     {
       id: 'clone',
-      title: 'Repository 접근',
-      description: currentStep === 'clone' ? currentDescription || 'GitHub API를 통해 Repository에 접근 중...' : 'GitHub API를 통해 Repository에 접근 중...',
+      title: 'Repository 클론',
+      description: 'GitHub에서 소스 코드를 가져오는 중...',
       icon: <Github className="h-4 w-4" />,
       completed: false,
       active: false
@@ -48,23 +42,23 @@ const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
     {
       id: 'scan',
       title: '프로젝트 구조 분석',
-      description: currentStep === 'scan' ? currentDescription || '디렉터리 구조 및 파일 스캔 중...' : '디렉터리 구조 및 파일 스캔 중...',
+      description: '디렉터리 구조 및 파일 스캔 중...',
       icon: <FolderOpen className="h-4 w-4" />,
       completed: false,
       active: false
     },
     {
       id: 'extract',
-      title: 'Controller 파일 추출',
-      description: currentStep === 'extract' ? currentDescription || 'Spring Boot Controller 파일들을 찾는 중...' : 'Spring Boot Controller 파일들을 찾는 중...',
+      title: 'API 엔드포인트 추출',
+      description: 'Controller 및 Route 파일 분석 중...',
       icon: <FileCode className="h-4 w-4" />,
       completed: false,
       active: false
     },
     {
       id: 'ai-analyze',
-      title: 'AI 코드 분석',
-      description: currentStep === 'ai-analyze' ? currentDescription || 'AI 모델이 코드를 분석하는 중...' : 'AI 모델이 코드를 분석하는 중...',
+      title: 'AI 분석',
+      description: 'AI 모델이 코드 구조를 분석하는 중...',
       icon: <Brain className="h-4 w-4" />,
       completed: false,
       active: false
@@ -72,7 +66,7 @@ const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
     {
       id: 'generate',
       title: '명세서 생성',
-      description: currentStep === 'generate' ? currentDescription || 'Markdown 형식의 API 명세서 생성 중...' : 'Markdown 형식의 API 명세서 생성 중...',
+      description: 'Markdown 형식의 API 명세서 생성 중...',
       icon: <FileText className="h-4 w-4" />,
       completed: false,
       active: false
@@ -82,48 +76,29 @@ const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
   const [processSteps, setProcessSteps] = useState(steps);
 
   useEffect(() => {
-    // 현재 단계에 따라 진행률 업데이트
-    if (currentStep) {
-      const stepIndex = steps.findIndex(step => step.id === currentStep);
-      if (stepIndex !== -1) {
-        const newProgress = ((stepIndex + 1) / steps.length) * 100;
-        setProgress(newProgress);
-        setCurrentStepIndex(stepIndex);
-        setProcessSteps(prevSteps => 
-          prevSteps.map((step, index) => ({
-            ...step,
-            completed: index < stepIndex,
-            active: index === stepIndex,
-            description: step.id === currentStep && currentDescription ? currentDescription : step.description
-          }))
-        );
-      }
-    } else {
-      // 기본 진행률 시뮬레이션
-      const timer = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = prev + 1;
-          const stepProgress = newProgress / 20;
-          const newStepIndex = Math.min(Math.floor(stepProgress), steps.length - 1);
-          
-          if (newStepIndex !== currentStepIndex) {
-            setCurrentStepIndex(newStepIndex);
-            setProcessSteps(prevSteps => 
-              prevSteps.map((step, index) => ({
-                ...step,
-                completed: index < newStepIndex,
-                active: index === newStepIndex
-              }))
-            );
-          }
-          
-          return newProgress >= 100 ? 100 : newProgress;
-        });
-      }, 150);
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        const newProgress = prev + 2;
+        const stepProgress = newProgress / 20;
+        const newStepIndex = Math.min(Math.floor(stepProgress), steps.length - 1);
+        
+        if (newStepIndex !== currentStepIndex) {
+          setCurrentStepIndex(newStepIndex);
+          setProcessSteps(prevSteps => 
+            prevSteps.map((step, index) => ({
+              ...step,
+              completed: index < newStepIndex,
+              active: index === newStepIndex
+            }))
+          );
+        }
+        
+        return newProgress >= 100 ? 100 : newProgress;
+      });
+    }, 60);
 
-      return () => clearInterval(timer);
-    }
-  }, [currentStep, currentDescription, currentStepIndex, steps.length]);
+    return () => clearInterval(timer);
+  }, [currentStepIndex, steps.length]);
 
   const repositoryName = repositoryUrl.split('/').pop() || 'Unknown';
 
@@ -201,8 +176,8 @@ const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
         <CardContent className="pt-4">
           <div className="text-center text-slate-400">
             <Brain className="h-8 w-8 mx-auto mb-2 text-blue-400" />
-            <p className="text-sm">실제 Repository를 분석하고 AI가 코드를 해석하는 중입니다...</p>
-            <p className="text-xs mt-1 text-slate-500">GitHub API 호출 및 AI 모델 응답 대기 중</p>
+            <p className="text-sm">AI가 코드를 세심하게 분석하고 있습니다...</p>
+            <p className="text-xs mt-1 text-slate-500">평균 소요 시간: 1-3분</p>
           </div>
         </CardContent>
       </Card>
