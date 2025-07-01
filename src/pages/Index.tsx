@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Github, Sparkles, FileText, ArrowRight, CheckCircle } from 'lucide-react';
 import RepositoryInput from '@/components/RepositoryInput';
 import AIModelSelector from '@/components/AIModelSelector';
 import APIKeyInput from '@/components/APIKeyInput';
 import AnalysisProgress from '@/components/AnalysisProgress';
 import SpecificationViewer from '@/components/SpecificationViewer';
+import { analyzeRepository, convertToMarkdown } from '@/utils/apiAnalyzer';
 
 type Step = 'input' | 'analyzing' | 'result';
 type AIModel = 'gemini' | 'openai';
@@ -28,80 +28,38 @@ const Index = () => {
     apiKey: ''
   });
   const [generatedSpec, setGeneratedSpec] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string>('');
 
-  const handleInputComplete = (data: ProjectData) => {
+  const handleInputComplete = async (data: ProjectData) => {
     setProjectData(data);
     setCurrentStep('analyzing');
+    setIsAnalyzing(true);
+    setAnalysisError('');
     
-    // 실제 분석 시뮬레이션 (프로토타입용)
-    setTimeout(() => {
-      const mockSpec = `# API 명세서
-
-## 프로젝트: ${data.repositoryUrl.split('/').pop()}
-
-### 개요
-자동 생성된 API 명세서입니다.
-
-### 엔드포인트
-
-#### GET /api/users
-**설명**: 사용자 목록 조회
-**응답**:
-\`\`\`json
-{
-  "users": [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com"
-    }
-  ]
-}
-\`\`\`
-
-#### POST /api/users
-**설명**: 새 사용자 생성
-**요청**:
-\`\`\`json
-{
-  "name": "string",
-  "email": "string"
-}
-\`\`\`
-
-**응답**:
-\`\`\`json
-{
-  "id": 1,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "createdAt": "2024-01-01T00:00:00Z"
-}
-\`\`\`
-
-#### PUT /api/users/{id}
-**설명**: 사용자 정보 수정
-**파라미터**: 
-- id (path): 사용자 ID
-
-**요청**:
-\`\`\`json
-{
-  "name": "string",
-  "email": "string"
-}
-\`\`\`
-
-#### DELETE /api/users/{id}
-**설명**: 사용자 삭제
-**파라미터**:
-- id (path): 사용자 ID
-
-**응답**: 204 No Content
-`;
-      setGeneratedSpec(mockSpec);
+    try {
+      console.log('Starting analysis with data:', data);
+      
+      const analysisResult = await analyzeRepository(
+        data.repositoryUrl,
+        data.aiModel,
+        data.apiKey,
+        (step, description) => {
+          console.log(`Analysis step: ${step} - ${description}`);
+        }
+      );
+      
+      const markdownSpec = convertToMarkdown(analysisResult);
+      setGeneratedSpec(markdownSpec);
       setCurrentStep('result');
-    }, 3000);
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setAnalysisError(error instanceof Error ? error.message : '분석 중 오류가 발생했습니다.');
+      setCurrentStep('input');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const resetProcess = () => {
@@ -112,6 +70,7 @@ const Index = () => {
       apiKey: ''
     });
     setGeneratedSpec('');
+    setAnalysisError('');
   };
 
   return (
@@ -185,14 +144,22 @@ const Index = () => {
                   value={projectData.apiKey}
                   onChange={(key) => setProjectData(prev => ({ ...prev, apiKey: key }))}
                 />
+                
+                {analysisError && (
+                  <div className="bg-red-900/20 border border-red-800 text-red-300 p-4 rounded-lg">
+                    <p className="font-medium">분석 실패</p>
+                    <p className="text-sm mt-1">{analysisError}</p>
+                  </div>
+                )}
+                
                 <Button
                   onClick={() => handleInputComplete(projectData)}
-                  disabled={!projectData.repositoryUrl || !projectData.apiKey}
+                  disabled={!projectData.repositoryUrl || !projectData.apiKey || isAnalyzing}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   size="lg"
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
-                  API 명세서 생성하기
+                  {isAnalyzing ? '분석 중...' : 'API 명세서 생성하기'}
                 </Button>
               </CardContent>
             </Card>
