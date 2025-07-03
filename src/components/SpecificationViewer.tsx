@@ -79,7 +79,7 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
                 </div>
               )}
               <pre className="bg-slate-800 p-4 overflow-x-auto">
-                <code className="text-sm text-slate-200 font-mono leading-relaxed">
+                <code className="text-sm text-green-300 font-mono leading-relaxed">
                   {codeBlockContent.join('\n')}
                 </code>
               </pre>
@@ -104,7 +104,7 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
       // 제목 처리
       if (line.startsWith('# ')) {
         elements.push(
-          <h1 key={i} className="text-3xl font-bold text-white mb-6 mt-8 pb-3 border-b border-slate-600">
+          <h1 key={i} className="text-3xl font-bold text-white mb-6 mt-8 pb-3 border-b border-slate-500">
             {line.substring(2)}
           </h1>
         );
@@ -136,7 +136,7 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
             part
         );
         elements.push(
-          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+          <p key={i} className="text-slate-200 mb-3 leading-relaxed">
             {processedLine}
           </p>
         );
@@ -146,13 +146,13 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
         const parts = line.split('`');
         const processedLine = parts.map((part, index) => 
           index % 2 === 1 ? 
-            <code key={index} className="bg-slate-700 text-blue-300 px-2 py-1 rounded text-sm font-mono">
+            <code key={index} className="bg-slate-700 text-green-300 px-2 py-1 rounded text-sm font-mono">
               {part}
             </code> : 
             part
         );
         elements.push(
-          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+          <p key={i} className="text-slate-200 mb-3 leading-relaxed">
             {processedLine}
           </p>
         );
@@ -162,14 +162,14 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
         elements.push(
           <div key={i} className="flex items-start mb-2">
             <div className="w-2 h-2 bg-blue-400 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
-            <p className="text-slate-300 leading-relaxed">{line.substring(2)}</p>
+            <p className="text-slate-200 leading-relaxed">{line.substring(2)}</p>
           </div>
         );
       }
       // 구분선 처리
       else if (line.trim() === '---') {
         elements.push(
-          <hr key={i} className="border-slate-600 my-8" />
+          <hr key={i} className="border-slate-500 my-8" />
         );
       }
       // 빈 줄 처리
@@ -179,7 +179,7 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
       // 일반 텍스트 처리
       else if (line.trim() !== '') {
         elements.push(
-          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+          <p key={i} className="text-slate-200 mb-3 leading-relaxed">
             {line}
           </p>
         );
@@ -264,7 +264,7 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
             </TabsList>
             
             <TabsContent value="preview" className="p-0 m-0">
-              <div className="bg-white/95 min-h-[60vh] max-h-[80vh] overflow-auto">
+              <div className="bg-slate-900 min-h-[60vh] max-h-[80vh] overflow-auto">
                 <div className="max-w-4xl mx-auto px-12 py-10">
                   <div className="space-y-1">
                     {renderMarkdown(specification)}
