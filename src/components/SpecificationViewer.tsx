@@ -58,33 +58,135 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
   };
 
   const renderMarkdown = (markdown: string) => {
-    // 간단한 마크다운 렌더링 (프로토타입용)
-    return markdown
-      .split('\n')
-      .map((line, index) => {
-        if (line.startsWith('# ')) {
-          return <h1 key={index} className="text-2xl font-bold text-white mb-4">{line.substring(2)}</h1>;
+    const lines = markdown.split('\n');
+    const elements: JSX.Element[] = [];
+    let inCodeBlock = false;
+    let codeBlockContent: string[] = [];
+    let codeBlockLanguage = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // 코드 블록 처리
+      if (line.startsWith('```')) {
+        if (inCodeBlock) {
+          // 코드 블록 종료
+          elements.push(
+            <div key={i} className="my-4 rounded-lg overflow-hidden border border-slate-600">
+              {codeBlockLanguage && (
+                <div className="bg-slate-700 px-4 py-2 text-xs text-slate-300 font-mono border-b border-slate-600">
+                  {codeBlockLanguage}
+                </div>
+              )}
+              <pre className="bg-slate-800 p-4 overflow-x-auto">
+                <code className="text-sm text-slate-200 font-mono leading-relaxed">
+                  {codeBlockContent.join('\n')}
+                </code>
+              </pre>
+            </div>
+          );
+          inCodeBlock = false;
+          codeBlockContent = [];
+          codeBlockLanguage = '';
+        } else {
+          // 코드 블록 시작
+          inCodeBlock = true;
+          codeBlockLanguage = line.substring(3).trim();
         }
-        if (line.startsWith('## ')) {
-          return <h2 key={index} className="text-xl font-semibold text-blue-300 mb-3 mt-6">{line.substring(3)}</h2>;
-        }
-        if (line.startsWith('### ')) {
-          return <h3 key={index} className="text-lg font-medium text-green-300 mb-2 mt-4">{line.substring(4)}</h3>;
-        }
-        if (line.startsWith('#### ')) {
-          return <h4 key={index} className="text-md font-medium text-slate-300 mb-2 mt-3">{line.substring(5)}</h4>;
-        }
-        if (line.startsWith('```')) {
-          return null; // 코드 블록 처리는 별도로
-        }
-        if (line.startsWith('- ') || line.startsWith('* ')) {
-          return <li key={index} className="text-slate-300 ml-4">{line.substring(2)}</li>;
-        }
-        if (line.trim() === '') {
-          return <br key={index} />;
-        }
-        return <p key={index} className="text-slate-300 mb-2">{line}</p>;
-      });
+        continue;
+      }
+
+      if (inCodeBlock) {
+        codeBlockContent.push(line);
+        continue;
+      }
+
+      // 제목 처리
+      if (line.startsWith('# ')) {
+        elements.push(
+          <h1 key={i} className="text-3xl font-bold text-white mb-6 mt-8 pb-3 border-b border-slate-600">
+            {line.substring(2)}
+          </h1>
+        );
+      } else if (line.startsWith('## ')) {
+        elements.push(
+          <h2 key={i} className="text-2xl font-semibold text-slate-100 mb-4 mt-8">
+            {line.substring(3)}
+          </h2>
+        );
+      } else if (line.startsWith('### ')) {
+        elements.push(
+          <h3 key={i} className="text-xl font-medium text-slate-200 mb-3 mt-6">
+            {line.substring(4)}
+          </h3>
+        );
+      } else if (line.startsWith('#### ')) {
+        elements.push(
+          <h4 key={i} className="text-lg font-medium text-slate-300 mb-2 mt-4">
+            {line.substring(5)}
+          </h4>
+        );
+      }
+      // 굵은 텍스트 처리
+      else if (line.includes('**')) {
+        const parts = line.split('**');
+        const processedLine = parts.map((part, index) => 
+          index % 2 === 1 ? 
+            <strong key={index} className="font-semibold text-blue-300">{part}</strong> : 
+            part
+        );
+        elements.push(
+          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+            {processedLine}
+          </p>
+        );
+      }
+      // 인라인 코드 처리
+      else if (line.includes('`') && !line.startsWith('```')) {
+        const parts = line.split('`');
+        const processedLine = parts.map((part, index) => 
+          index % 2 === 1 ? 
+            <code key={index} className="bg-slate-700 text-blue-300 px-2 py-1 rounded text-sm font-mono">
+              {part}
+            </code> : 
+            part
+        );
+        elements.push(
+          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+            {processedLine}
+          </p>
+        );
+      }
+      // 리스트 처리
+      else if (line.startsWith('- ') || line.startsWith('* ')) {
+        elements.push(
+          <div key={i} className="flex items-start mb-2">
+            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
+            <p className="text-slate-300 leading-relaxed">{line.substring(2)}</p>
+          </div>
+        );
+      }
+      // 구분선 처리
+      else if (line.trim() === '---') {
+        elements.push(
+          <hr key={i} className="border-slate-600 my-8" />
+        );
+      }
+      // 빈 줄 처리
+      else if (line.trim() === '') {
+        elements.push(<div key={i} className="h-2" />);
+      }
+      // 일반 텍스트 처리
+      else if (line.trim() !== '') {
+        elements.push(
+          <p key={i} className="text-slate-300 mb-3 leading-relaxed">
+            {line}
+          </p>
+        );
+      }
+    }
+
+    return elements;
   };
 
   return (
@@ -161,9 +263,13 @@ const SpecificationViewer: React.FC<SpecificationViewerProps> = ({
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="preview" className="p-6 m-0">
-              <div className="prose prose-invert max-w-none">
-                {renderMarkdown(specification)}
+            <TabsContent value="preview" className="p-0 m-0">
+              <div className="bg-white/95 min-h-[60vh] max-h-[80vh] overflow-auto">
+                <div className="max-w-4xl mx-auto px-12 py-10">
+                  <div className="space-y-1">
+                    {renderMarkdown(specification)}
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
