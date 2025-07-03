@@ -1,4 +1,3 @@
-
 import { AnalysisResult } from './apiAnalyzer';
 import { DocumentationTemplate, CustomTemplate } from '@/types/templates';
 
@@ -23,6 +22,20 @@ export const renderWithTemplate = (
   }
 };
 
+const renderApiSummaryTable = (result: AnalysisResult): string => {
+  let table = `## API 요약\n\n`;
+  table += `| API 이름 | Method | Endpoint | 설명 |\n`;
+  table += `|----------|--------|----------|------|\n`;
+  
+  result.endpoints.forEach(endpoint => {
+    const apiName = endpoint.description || `${endpoint.method} ${endpoint.path}`;
+    table += `| ${apiName} | ${endpoint.method} | ${endpoint.path} | ${endpoint.description || '-'} |\n`;
+  });
+  
+  table += `\n---\n\n`;
+  return table;
+};
+
 const renderBasicTemplate = (result: AnalysisResult): string => {
   let markdown = `# ${result.projectName} API 명세서\n\n`;
   
@@ -30,12 +43,29 @@ const renderBasicTemplate = (result: AnalysisResult): string => {
     markdown += `## 개요\n${result.description}\n\n`;
   }
   
-  markdown += `## 엔드포인트\n\n`;
+  // Add API summary table
+  markdown += renderApiSummaryTable(result);
+  
+  markdown += `## 상세 API 명세\n\n`;
   
   result.endpoints.forEach(endpoint => {
     markdown += `### ${endpoint.method} ${endpoint.path}\n`;
     if (endpoint.description) {
       markdown += `${endpoint.description}\n\n`;
+    }
+    
+    if (endpoint.requestBody) {
+      markdown += `**요청 본문**:\n`;
+      markdown += `\`\`\`json\n${JSON.stringify(endpoint.requestBody.example || endpoint.requestBody.schema, null, 2)}\n\`\`\`\n\n`;
+    }
+    
+    if (endpoint.responses && endpoint.responses.length > 0) {
+      endpoint.responses.forEach(response => {
+        if (response.example) {
+          markdown += `**응답 (${response.statusCode})**:\n`;
+          markdown += `\`\`\`json\n${JSON.stringify(response.example, null, 2)}\n\`\`\`\n\n`;
+        }
+      });
     }
   });
   
@@ -49,8 +79,11 @@ const renderDetailedTemplate = (result: AnalysisResult): string => {
     markdown += `## 개요\n${result.description}\n\n`;
   }
   
+  // Add API summary table
+  markdown += renderApiSummaryTable(result);
+  
   markdown += `## 인증\nBearer Token이 필요할 수 있습니다.\n\n`;
-  markdown += `## 엔드포인트\n\n`;
+  markdown += `## 상세 API 명세\n\n`;
   
   result.endpoints.forEach(endpoint => {
     markdown += `### ${endpoint.method} ${endpoint.path}\n\n`;
@@ -68,7 +101,7 @@ const renderDetailedTemplate = (result: AnalysisResult): string => {
     }
     
     if (endpoint.requestBody) {
-      markdown += `**요청 본문**:\n`;
+      markdown += `**📤 요청**:\n`;
       markdown += `\`\`\`json\n${JSON.stringify(endpoint.requestBody.example || endpoint.requestBody.schema, null, 2)}\n\`\`\`\n\n`;
     }
     
@@ -77,6 +110,7 @@ const renderDetailedTemplate = (result: AnalysisResult): string => {
       endpoint.responses.forEach(response => {
         markdown += `- **${response.statusCode}**: ${response.description}\n`;
         if (response.example) {
+          markdown += `**✅ 응답 예시 (${response.statusCode})**:\n`;
           markdown += `\`\`\`json\n${JSON.stringify(response.example, null, 2)}\n\`\`\`\n`;
         }
       });
@@ -200,11 +234,14 @@ const renderCustomTemplate = (result: AnalysisResult, customTemplate?: CustomTem
     markdown += `## 프로젝트 설명\n${result.description}\n\n`;
   }
   
+  // Add API summary table for custom template too
+  markdown += renderApiSummaryTable(result);
+  
   if (customTemplate.includeAuthentication) {
     markdown += `## 인증\n인증이 필요한 엔드포인트가 있을 수 있습니다.\n\n`;
   }
   
-  markdown += `## API 엔드포인트\n\n`;
+  markdown += `## 상세 API 명세\n\n`;
   
   result.endpoints.forEach(endpoint => {
     markdown += `### ${endpoint.method} ${endpoint.path}\n\n`;
@@ -222,7 +259,7 @@ const renderCustomTemplate = (result: AnalysisResult, customTemplate?: CustomTem
     }
     
     if (customTemplate.includeExamples && endpoint.requestBody) {
-      markdown += `**요청 예시**:\n`;
+      markdown += `**📤 요청 예시**:\n`;
       markdown += `\`\`\`json\n${JSON.stringify(endpoint.requestBody.example || endpoint.requestBody.schema, null, 2)}\n\`\`\`\n\n`;
     }
     
@@ -238,7 +275,7 @@ const renderCustomTemplate = (result: AnalysisResult, customTemplate?: CustomTem
       if (customTemplate.includeExamples) {
         endpoint.responses.forEach(response => {
           if (response.example) {
-            markdown += `**응답 예시 (${response.statusCode})**:\n`;
+            markdown += `**✅ 응답 예시 (${response.statusCode})**:\n`;
             markdown += `\`\`\`json\n${JSON.stringify(response.example, null, 2)}\n\`\`\`\n\n`;
           }
         });
