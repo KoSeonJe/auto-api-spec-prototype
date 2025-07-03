@@ -35,7 +35,7 @@ const renderBasicTemplate = (result: AnalysisResult): string => {
   result.endpoints.forEach(endpoint => {
     markdown += `### ${endpoint.method} ${endpoint.path}\n`;
     if (endpoint.description) {
-      markdown += `**설명**: ${endpoint.description}\n\n`;
+      markdown += `${endpoint.description}\n\n`;
     }
   });
   
@@ -62,7 +62,7 @@ const renderDetailedTemplate = (result: AnalysisResult): string => {
     if (endpoint.parameters && endpoint.parameters.length > 0) {
       markdown += `**파라미터**:\n`;
       endpoint.parameters.forEach(param => {
-        markdown += `- ${param.name} (${param.type}): ${param.description || '설명 없음'}\n`;
+        markdown += `- **${param.name}** (${param.type}): ${param.description || '설명 없음'}\n`;
       });
       markdown += `\n`;
     }
@@ -73,9 +73,9 @@ const renderDetailedTemplate = (result: AnalysisResult): string => {
     }
     
     if (endpoint.responses && endpoint.responses.length > 0) {
-      markdown += `**응답 코드**:\n`;
+      markdown += `**응답**:\n`;
       endpoint.responses.forEach(response => {
-        markdown += `- ${response.statusCode}: ${response.description}\n`;
+        markdown += `- **${response.statusCode}**: ${response.description}\n`;
         if (response.example) {
           markdown += `\`\`\`json\n${JSON.stringify(response.example, null, 2)}\n\`\`\`\n`;
         }
@@ -216,7 +216,7 @@ const renderCustomTemplate = (result: AnalysisResult, customTemplate?: CustomTem
     if (endpoint.parameters && endpoint.parameters.length > 0) {
       markdown += `**요청 파라미터**:\n`;
       endpoint.parameters.forEach(param => {
-        markdown += `- \`${param.name}\` (${param.type}): ${param.description || '설명 없음'}\n`;
+        markdown += `- **${param.name}** (${param.type}): ${param.description || '설명 없음'}\n`;
       });
       markdown += `\n`;
     }
@@ -228,9 +228,9 @@ const renderCustomTemplate = (result: AnalysisResult, customTemplate?: CustomTem
     
     if (endpoint.responses && endpoint.responses.length > 0) {
       if (customTemplate.includeErrorCodes) {
-        markdown += `**응답 상태 코드**:\n`;
+        markdown += `**응답 상태**:\n`;
         endpoint.responses.forEach(response => {
-          markdown += `- \`${response.statusCode}\`: ${response.description}\n`;
+          markdown += `- **${response.statusCode}**: ${response.description}\n`;
         });
         markdown += `\n`;
       }
